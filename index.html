@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>法令等遵守責任者 試験対策</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Hiragino Sans','Noto Sans JP',sans-serif;font-size:16px;color:#1a1a1a;background:#f0f2f5;-webkit-text-size-adjust:100%}
+:root{
+  --primary:#1B4F8A;--primary-dark:#133a6e;--primary-light:#e8f0fb;
+  --success:#27ae60;--error:#e74c3c;
+  --text:#2c3e50;--text-light:#7f8c8d;--border:#dee2e6;
+  --bg:#f0f2f5;--card:#fff;--radius:12px;--shadow:0 2px 12px rgba(0,0,0,.08)
+}
+.screen{display:none;min-height:100vh;width:100%}
+.screen.active{display:flex;flex-direction:column}
+
+/* ボタン共通 */
+.btn{display:block;width:100%;padding:16px 20px;border:none;border-radius:var(--radius);font-size:16px;font-weight:600;cursor:pointer;text-align:center;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent}
+.btn:active{opacity:.85;transform:scale(.98)}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-secondary{background:#fff;color:var(--primary);border:2px solid var(--primary)}
+.btn-ghost{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3)}
+
+/* ===== ローディング ===== */
+#loading{position:fixed;inset:0;background:var(--primary);display:flex;align-items:center;justify-content:center;z-index:1000;flex-direction:column;gap:16px;color:#fff}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== ログイン ===== */
+#login-screen{background:linear-gradient(135deg,var(--primary) 0%,#2980b9 100%);justify-content:center;align-items:center;padding:24px}
+.login-box{background:#fff;border-radius:20px;padding:36px 28px;width:100%;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .icon{font-size:48px;display:block;margin-bottom:12px}
+.login-logo h1{font-size:18px;font-weight:700;color:var(--primary);line-height:1.4}
+.login-logo p{font-size:12px;color:var(--text-light);margin-top:4px}
+.form-group{margin-bottom:20px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-light);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.form-input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:16px;transition:border-color .2s;outline:none;-webkit-appearance:none}
+.form-input:focus{border-color:var(--primary)}
+.login-error{color:var(--error);font-size:13px;text-align:center;margin-bottom:16px;display:none}
+.login-error.show{display:block}
+
+/* ===== ホーム ===== */
+#home-screen{background:var(--bg)}
+.home-header{background:var(--primary);color:#fff;padding:24px 20px 20px}
+.home-header h1{font-size:16px;font-weight:700;line-height:1.3}
+.home-header p{font-size:12px;opacity:.8;margin-top:4px}
+.home-stats{display:flex;gap:10px;margin-top:14px}
+.stat-card{flex:1;background:rgba(255,255,255,.15);border-radius:10px;padding:10px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;display:block}
+.stat-label{font-size:11px;opacity:.85}
+.home-content{padding:12px 16px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.group-title{font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;padding-left:2px}
+.group-title:first-child{margin-top:4px}
+.subject-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:8px;cursor:pointer;transition:transform .15s;-webkit-tap-highlight-color:transparent;border-left:4px solid var(--primary)}
+.subject-card:active{transform:scale(.98)}
+.subject-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.subject-name{font-size:13px;font-weight:600;color:var(--text);line-height:1.4;flex:1;margin-right:8px}
+.subject-badge{font-size:11px;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.badge-todo{background:#eee;color:var(--text-light)}
+.badge-progress{background:#fff3cd;color:#856404}
+.badge-done{background:#d1f0e0;color:#155724}
+.subject-progress-bar{height:5px;background:#eee;border-radius:3px;overflow:hidden;margin-bottom:6px}
+.subject-progress-fill{height:100%;background:var(--primary);border-radius:3px;transition:width .3s}
+.subject-progress-fill.high{background:var(--success)}
+.subject-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text-light)}
+.home-footer{padding:16px;background:var(--card);border-top:1px solid var(--border);display:flex;gap:8px}
+
+/* ===== テキスト選択モーダル ===== */
+#subject-modal{position:fixed;inset:0;z-index:500;display:none}
+#subject-modal.open{display:block}
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.modal-sheet{position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 40px;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px}
+.modal-subtitle{font-size:12px;color:var(--text-light);margin-bottom:20px}
+.modal-options{display:flex;flex-direction:column;gap:10px}
+.modal-option{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:var(--radius);cursor:pointer;border:none;text-align:left;width:100%;-webkit-tap-highlight-color:transparent}
+.modal-option:active{opacity:.8}
+.modal-option-label{font-size:14px;font-weight:600;color:var(--text)}
+.modal-option-meta{font-size:12px;color:var(--text-light)}
+.modal-divider{height:1px;background:var(--border);margin:8px 0}
+.modal-close{display:block;width:100%;padding:14px;background:none;border:2px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text-light);cursor:pointer;margin-top:12px}
+
+/* ===== クイズ ===== */
+#quiz-screen{background:var(--bg)}
+.quiz-header{background:var(--primary);color:#fff;padding:16px 20px 0;position:sticky;top:0;z-index:10}
+.quiz-header-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.back-btn{background:rgba(255,255,255,.2);border:none;color:#fff;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.quiz-subject-name{font-size:12px;opacity:.9;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.quiz-counter{font-size:13px;font-weight:600;white-space:nowrap}
+.quiz-progress-bar{height:4px;background:rgba(255,255,255,.2);margin:0 -20px}
+.quiz-progress-fill{height:100%;background:#fff;transition:width .3s}
+.quiz-content{padding:16px;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:100px}
+.q-type-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--primary-light);color:var(--primary);font-weight:600;margin-bottom:10px}
+.q-text{font-size:15px;line-height:1.7;color:var(--text);margin-bottom:20px;font-weight:500}
+.choices-list{list-style:none}
+.choice-item{margin-bottom:8px}
+.choice-btn{display:flex;align-items:flex-start;gap:10px;width:100%;padding:14px;background:var(--card);border:2px solid var(--border);border-radius:var(--radius);cursor:pointer;text-align:left;font-size:14px;line-height:1.5;color:var(--text);transition:border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.choice-btn:active{background:var(--primary-light)}
+.choice-num{background:var(--border);color:var(--text-light);min-width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;transition:background .15s,color .15s}
+.choice-text{flex:1}
+.choice-btn.correct{border-color:var(--success);background:#e8f8ee}
+.choice-btn.correct .choice-num{background:var(--success);color:#fff}
+.choice-btn.wrong{border-color:var(--error);background:#fef0f0}
+.choice-btn.wrong .choice-num{background:var(--error);color:#fff}
+.choice-btn.disabled{cursor:not-allowed}
+.choice-btn.disabled:not(.correct):not(.wrong){opacity:.5}
+.answer-feedback{margin-top:16px;border-radius:var(--radius);padding:16px;display:none}
+.answer-feedback.show{display:block}
+.feedback-header{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;margin-bottom:10px}
+.feedback-icon{font-size:22px}
+.feedback-correct{background:#e8f8ee}
+.feedback-correct .feedback-header{color:var(--success)}
+.feedback-wrong{background:#fef0f0}
+.feedback-wrong .feedback-header{color:var(--error)}
+.feedback-explanation{font-size:13px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+.next-btn-wrap{padding:12px 16px;background:var(--card);border-top:1px solid var(--border);position:fixed;bottom:0;left:0;right:0;display:none}
+
+/* ===== 結果 ===== */
+#result-screen{background:var(--bg)}
+.result-header{background:var(--primary);color:#fff;padding:40px 24px 28px;text-align:center}
+.result-score-circle{width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.15);border:4px solid rgba(255,255,255,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 16px}
+.result-score-num{font-size:30px;font-weight:800;line-height:1}
+.result-score-total{font-size:13px;opacity:.8}
+.result-title{font-size:20px;font-weight:700;margin-bottom:4px}
+.result-subtitle{font-size:13px;opacity:.8}
+.result-content{padding:16px;flex:1;overflow-y:auto}
+.result-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:14px}
+.result-card-title{padding:12px 16px;font-size:12px;font-weight:700;color:var(--text-light);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #f0f0f0}
+.breakdown-row:last-child{border-bottom:none}
+.breakdown-label{font-size:14px;color:var(--text)}
+.breakdown-value{font-size:14px;font-weight:700;color:var(--primary)}
+.breakdown-value.val-success{color:var(--success)}
+.breakdown-value.val-error{color:var(--error)}
+.result-footer{padding:16px;background:var(--card);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+</style>
+</head>
+<body>
+
+<!-- ローディング -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:14px">読み込み中...</div>
+</div>
+
+<!-- ログイン -->
+<div id="login-screen" class="screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="icon">📋</span>
+      <h1>法令等遵守責任者<br>試験対策サイト</h1>
+      <p>日本郵便 信越支社</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="pw-input">パスワード</label>
+      <input type="password" id="pw-input" class="form-input" placeholder="パスワードを入力" autocomplete="current-password">
+    </div>
+    <div id="login-error" class="login-error">パスワードが正しくありません</div>
+    <button class="btn btn-primary" id="login-btn">ログイン</button>
+  </div>
+</div>
+
+<!-- ホーム -->
+<div id="home-screen" class="screen">
+  <div class="home-header">
+    <h1>📋 法令等遵守責任者 試験対策</h1>
+    <p>テキストを選んで学習を始めましょう</p>
+    <div class="home-stats">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-answered">0</span>
+        <span class="stat-label">解答済み</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-correct">0</span>
+        <span class="stat-label">正解数</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-accuracy">-%</span>
+        <span class="stat-label">正答率</span>
+      </div>
+    </div>
+  </div>
+  <div class="home-content" id="subject-list"></div>
+  <div class="home-footer">
+    <button class="btn btn-primary" id="all-quiz-btn" style="flex:1">🎲 全テキスト混合出題</button>
+    <button class="btn btn-secondary" id="logout-btn" style="flex:0 0 auto;width:auto;padding:16px 20px">ログアウト</button>
+  </div>
+</div>
+
+<!-- テキスト選択モーダル -->
+<div id="subject-modal">
+  <div class="modal-overlay" id="modal-overlay"></div>
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-title"></div>
+    <div class="modal-subtitle" id="modal-subtitle"></div>
+    <div class="modal-options" id="modal-options"></div>
+    <div class="modal-divider"></div>
+    <button class="modal-close" id="modal-close-btn">キャンセル</button>
+  </div>
+</div>
+
+<!-- クイズ -->
+<div id="quiz-screen" class="screen">
+  <div class="quiz-header">
+    <div class="quiz-header-top">
+      <button class="back-btn" id="quiz-back-btn">←</button>
+      <span class="quiz-subject-name" id="quiz-subject-name"></span>
+      <span class="quiz-counter" id="quiz-counter">1/50</span>
+    </div>
+    <div class="quiz-progress-bar">
+      <div class="quiz-progress-fill" id="quiz-progress-fill" style="width:0%"></div>
+    </div>
+  </div>
+  <div class="quiz-content">
+    <div class="q-type-badge" id="q-type-badge"></div>
+    <div class="q-text" id="q-text"></div>
+    <ul class="choices-list" id="choices-list"></ul>
+    <div class="answer-feedback" id="answer-feedback">
+      <div class="feedback-header">
+        <span class="feedback-icon" id="feedback-icon"></span>
+        <span id="feedback-title"></span>
+      </div>
+      <div class="feedback-explanation" id="feedback-explanation"></div>
+    </div>
+  </div>
+  <div class="next-btn-wrap" id="next-btn-wrap">
+    <button class="btn btn-primary" id="next-btn">次の問題 →</button>
+  </div>
+</div>
+
+<!-- 結果 -->
+<div id="result-screen" class="screen">
+  <div class="result-header">
+    <div class="result-score-circle">
+      <span class="result-score-num" id="res-num">0</span>
+      <span class="result-score-total" id="res-total">/50問</span>
+    </div>
+    <div class="result-title" id="res-title">結果</div>
+    <div class="result-subtitle" id="res-sub"></div>
+  </div>
+  <div class="result-content">
+    <div class="result-card">
+      <div class="result-card-title">問題タイプ別内訳</div>
+      <div id="breakdown-rows"></div>
+    </div>
+    <div class="result-card">
+      <div class="result-card-title">間違えた問題</div>
+      <div id="wrong-rows"></div>
+    </div>
+  </div>
+  <div class="result-footer">
+    <button class="btn btn-primary" id="retry-btn">もう一度同じ問題を解く</button>
+    <button class="btn btn-secondary" id="home-btn">ホームへ戻る</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// パスワード設定（変更する場合はここを書き換えてください）
+// ============================================================
+const PASSWORD = 'shinkou2026';
+
+// ============================================================
+// 状態
+// ============================================================
+let DB = null;               // questions.json の中身
+let currentSubjectId = null;
+let quizQuestions = [];
+let quizIndex = 0;
+let quizResults = [];        // true/false の配列
+let quizTitle = '';
+let answered = false;
+
+// ============================================================
+// ユーティリティ
+// ============================================================
+const $ = id => document.getElementById(id);
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function closeModal() {
+  $('subject-modal').classList.remove('open');
+}
+
+// ============================================================
+// 進捗管理（localStorage）
+// ============================================================
+function loadProg() {
+  try { return JSON.parse(localStorage.getItem('cp_prog') || '{}'); }
+  catch { return {}; }
+}
+function saveProg(p) {
+  localStorage.setItem('cp_prog', JSON.stringify(p));
+}
+function getSubjectProg(id) {
+  const p = loadProg();
+  return p[id] || { answered: {}, correct: {} };
+}
+function recordResults(subjectId, questions, results) {
+  const p = loadProg();
+  if (!p[subjectId]) p[subjectId] = { answered: {}, correct: {} };
+  questions.forEach((q, i) => {
+    const k = String(q.num);
+    p[subjectId].answered[k] = true;
+    p[subjectId].correct[k] = results[i];
+  });
+  saveProg(p);
+}
+function resetProgress() {
+  if (confirm('すべての学習記録をリセットしますか？')) {
+    localStorage.removeItem('cp_prog');
+    renderHome();
+  }
+}
+
+// ============================================================
+// 認証
+// ============================================================
+function isLoggedIn() { return sessionStorage.getItem('cp_auth') === '1'; }
+function doLogin(pw) {
+  if (pw === PASSWORD) {
+    sessionStorage.setItem('cp_auth', '1');
+    $('login-error').classList.remove('show');
+    showHomeScreen();
+  } else {
+    $('login-error').classList.add('show');
+    $('pw-input').value = '';
+    $('pw-input').focus();
+  }
+}
+function doLogout() { sessionStorage.removeItem('cp_auth'); showScreen('login-screen'); }
+
+// ============================================================
+// ホーム画面
+// ============================================================
+function getGroup(subject) {
+  const id = parseInt(subject.id);
+  if (id <= 12) return '第1編';
+  if (id <= 16) return '第2編';
+  if (id <= 20) return '募集関連ガイドライン';
+  if (id <= 30) return '生保指針';
+  if (id <= 40) return '高齢者向けガイドライン';
+  if (id <= 42) return '市場リスクガイドライン';
+  if (id <= 46) return '便宜供与・出向ガイドライン';
+  return '構成員契約規制';
+}
+
+function renderHome() {
+  const prog = loadProg();
+  let totAns = 0, totCor = 0, totQ = 0;
+  DB.subjects.forEach(s => {
+    const p = prog[s.id] || {};
+    totAns += Object.keys(p.answered || {}).length;
+    totCor += Object.values(p.correct || {}).filter(Boolean).length;
+    totQ   += s.questions.length;
+  });
+  $('stat-answered').textContent = totAns;
+  $('stat-correct').textContent  = totCor;
+  $('stat-accuracy').textContent = totAns > 0 ? Math.round(totCor / totAns * 100) + '%' : '-%';
+
+  // グループ分け
+  const groups = {};
+  DB.subjects.forEach(s => {
+    const g = getGroup(s);
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(s);
+  });
+
+  const container = $('subject-list');
+  container.innerHTML = '';
+  Object.entries(groups).forEach(([gName, subjects]) => {
+    const gt = document.createElement('div');
+    gt.className = 'group-title';
+    gt.textContent = gName;
+    container.appendChild(gt);
+
+    subjects.forEach(s => {
+      const p = prog[s.id] || {};
+      const ans = Object.keys(p.answered || {}).length;
+      const cor = Object.values(p.correct || {}).filter(Boolean).length;
+      const total = s.questions.length;
+      const pct = total > 0 ? Math.round(ans / total * 100) : 0;
+      const acc = ans > 0 ? Math.round(cor / ans * 100) : 0;
+
+      let badge = '未着手', bClass = 'badge-todo';
+      if (ans > 0 && ans < total) { badge = `${pct}%進行中`; bClass = 'badge-progress'; }
+      else if (ans >= total)      { badge = `完了 ${acc}%`;  bClass = 'badge-done'; }
+
+      const card = document.createElement('div');
+      card.className = 'subject-card';
+      card.innerHTML = `
+        <div class="subject-card-header">
+          <div class="subject-name">${s.name}</div>
+          <span class="subject-badge ${bClass}">${badge}</span>
+        </div>
+        <div class="subject-progress-bar">
+          <div class="subject-progress-fill ${pct >= 80 ? 'high' : ''}" style="width:${pct}%"></div>
+        </div>
+        <div class="subject-meta">
+          <span>${ans}/${total}問 回答済み</span>
+          <span>${ans > 0 ? `正答率 ${acc}%` : '未挑戦'}</span>
+        </div>`;
+      card.addEventListener('click', () => openSubjectModal(s.id));
+      container.appendChild(card);
+    });
+  });
+}
+
+function showHomeScreen() {
+  renderHome();
+  showScreen('home-screen');
+}
+
+// ============================================================
+// テキスト選択モーダル
+// ============================================================
+function openSubjectModal(subjectId) {
+  const s = DB.subjects.find(x => x.id === subjectId);
+  if (!s) return;
+  currentSubjectId = subjectId;
+
+  $('modal-title').textContent = s.name;
+  $('modal-subtitle').textContent = `全${s.questions.length}問`;
+
+  // 問題タイプ別集計
+  const types = {};
+  s.questions.forEach(q => {
+    if (!types[q.type]) types[q.type] = 0;
+    types[q.type]++;
+  });
+
+  const opts = $('modal-options');
+  opts.innerHTML = '';
+
+  // 全問
+  const allBtn = document.createElement('button');
+  allBtn.className = 'modal-option';
+  allBtn.innerHTML = `<span class="modal-option-label">📚 全問題</span><span class="modal-option-meta">${s.questions.length}問</span>`;
+  allBtn.addEventListener('click', () => { closeModal(); startQuiz(subjectId, null); });
+  opts.appendChild(allBtn);
+
+  // タイプ別
+  if (Object.keys(types).some(t => t !== '一般問題')) {
+    Object.entries(types).forEach(([type, cnt]) => {
+      if (type === '一般問題' && Object.keys(types).length > 1) return;
+      const btn = document.createElement('button');
+      btn.className = 'modal-option';
+      btn.innerHTML = `<span class="modal-option-label">【${type}】のみ</span><span class="modal-option-meta">${cnt}問</span>`;
+      btn.addEventListener('click', () => { closeModal(); startQuiz(subjectId, type); });
+      opts.appendChild(btn);
+    });
+  }
+
+  // 間違えた問題のみ
+  const prog = getSubjectProg(subjectId);
+  const wrongNums = Object.entries(prog.correct || {})
+    .filter(([, v]) => !v).map(([k]) => parseInt(k));
+  if (wrongNums.length > 0) {
+    const wrongBtn = document.createElement('button');
+    wrongBtn.className = 'modal-option';
+    wrongBtn.innerHTML = `<span class="modal-option-label">❌ 間違えた問題のみ</span><span class="modal-option-meta">${wrongNums.length}問</span>`;
+    wrongBtn.addEventListener('click', () => {
+      closeModal();
+      startQuizByNums(subjectId, wrongNums, '間違えた問題');
+    });
+    opts.appendChild(wrongBtn);
+  }
+
+  $('subject-modal').classList.add('open');
+}
+
+// ============================================================
+// クイズ
+// ============================================================
+function startQuiz(subjectId, filterType) {
+  const s = DB.subjects.find(x => x.id === subjectId);
+  if (!s) return;
+  let qs = filterType ? s.questions.filter(q => q.type === filterType) : [...s.questions];
+  const title = filterType ? `${s.name}【${filterType}】` : s.name;
+  beginQuiz(subjectId, qs, title);
+}
+
+function startQuizByNums(subjectId, nums, label) {
+  const s = DB.subjects.find(x => x.id === subjectId);
+  if (!s) return;
+  const set = new Set(nums);
+  const qs = s.questions.filter(q => set.has(q.num));
+  beginQuiz(subjectId, qs, label);
+}
+
+function startAllMixed() {
+  // 全テキストからランダムに各10問抽出
+  const all = [];
+  DB.subjects.forEach(s => {
+    const sample = [...s.questions].sort(() => Math.random() - .5).slice(0, 10);
+    all.push(...sample);
+  });
+  all.sort(() => Math.random() - .5);
+  beginQuiz('mixed', all, '全テキスト混合');
+}
+
+function beginQuiz(subjectId, questions, title) {
+  currentSubjectId = subjectId;
+  quizQuestions = questions;
+  quizIndex = 0;
+  quizResults = [];
+  quizTitle = title;
+  $('quiz-subject-name').textContent = title;
+  showScreen('quiz-screen');
+  showQuestion();
+}
+
+function showQuestion() {
+  answered = false;
+  const q = quizQuestions[quizIndex];
+  const total = quizQuestions.length;
+
+  $('quiz-counter').textContent = `${quizIndex + 1}/${total}`;
+  $('quiz-progress-fill').style.width = (quizIndex / total * 100) + '%';
+  $('q-type-badge').textContent = q.type;
+  $('q-text').textContent = `第${q.num}問　${q.question}`;
+
+  const NUMS = ['①', '②', '③', '④'];
+  const list = $('choices-list');
+  list.innerHTML = '';
+  q.choices.forEach((ch, i) => {
+    const li = document.createElement('li');
+    li.className = 'choice-item';
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="choice-num">${NUMS[i]}</span><span class="choice-text">${ch}</span>`;
+    btn.addEventListener('click', () => selectAnswer(i));
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+
+  const fb = $('answer-feedback');
+  fb.className = 'answer-feedback';
+  fb.style.display = 'none';
+  $('next-btn-wrap').style.display = 'none';
+}
+
+function selectAnswer(choiceIndex) {
+  if (answered) return;
+  answered = true;
+
+  const q = quizQuestions[quizIndex];
+  const correctIdx = q.answer - 1;
+  const isCorrect = choiceIndex === correctIdx;
+  quizResults.push(isCorrect);
+
+  const NUMS = ['①', '②', '③', '④'];
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === correctIdx) btn.classList.add('correct');
+    if (i === choiceIndex && !isCorrect) btn.classList.add('wrong');
+  });
+
+  const fb = $('answer-feedback');
+  fb.style.display = 'block';
+  if (isCorrect) {
+    fb.className = 'answer-feedback feedback-correct show';
+    $('feedback-icon').textContent = '⭕';
+    $('feedback-title').textContent = '正解！';
+  } else {
+    fb.className = 'answer-feedback feedback-wrong show';
+    $('feedback-icon').textContent = '❌';
+    $('feedback-title').textContent = `不正解　正解は${NUMS[correctIdx]}`;
+  }
+  $('feedback-explanation').textContent = q.explanation || '解説がありません。';
+
+  const nextWrap = $('next-btn-wrap');
+  nextWrap.style.display = 'block';
+  const isLast = quizIndex >= quizQuestions.length - 1;
+  $('next-btn').textContent = isLast ? '結果を見る 📊' : '次の問題 →';
+
+  setTimeout(() => fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 200);
+}
+
+function nextQuestion() {
+  quizIndex++;
+  if (quizIndex >= quizQuestions.length) finishQuiz();
+  else showQuestion();
+}
+
+// ============================================================
+// 結果
+// ============================================================
+function finishQuiz() {
+  if (currentSubjectId !== 'mixed') {
+    recordResults(currentSubjectId, quizQuestions, quizResults);
+  }
+
+  const total   = quizQuestions.length;
+  const correct = quizResults.filter(Boolean).length;
+  const pct     = Math.round(correct / total * 100);
+
+  $('res-num').textContent = correct;
+  $('res-total').textContent = `/${total}問`;
+
+  let title = '結果発表';
+  if (pct >= 90) title = '素晴らしい！🎉';
+  else if (pct >= 80) title = '合格ライン突破！👏';
+  else if (pct >= 60) title = 'もう少し！💪';
+  else title = '復習が必要です📚';
+  $('res-title').textContent = title;
+  $('res-sub').textContent = `正答率 ${pct}%`;
+
+  // タイプ別内訳
+  const typeMap = {};
+  quizQuestions.forEach((q, i) => {
+    if (!typeMap[q.type]) typeMap[q.type] = { total: 0, correct: 0 };
+    typeMap[q.type].total++;
+    if (quizResults[i]) typeMap[q.type].correct++;
+  });
+
+  const breakdownRows = $('breakdown-rows');
+  breakdownRows.innerHTML = `
+    <div class="breakdown-row">
+      <span class="breakdown-label">合計</span>
+      <span class="breakdown-value">${correct}/${total}問（${pct}%）</span>
+    </div>`;
+  Object.entries(typeMap).forEach(([type, data]) => {
+    const p = Math.round(data.correct / data.total * 100);
+    const cls = p >= 80 ? 'val-success' : p < 60 ? 'val-error' : '';
+    breakdownRows.innerHTML += `
+      <div class="breakdown-row">
+        <span class="breakdown-label">【${type}】</span>
+        <span class="breakdown-value ${cls}">${data.correct}/${data.total}問（${p}%）</span>
+      </div>`;
+  });
+
+  // 間違えた問題リスト
+  const wrongRows = $('wrong-rows');
+  const wrongs = quizQuestions.filter((_, i) => !quizResults[i]);
+  if (wrongs.length === 0) {
+    wrongRows.innerHTML = '<div class="breakdown-row"><span class="breakdown-label">なし（全問正解！）</span></div>';
+  } else {
+    wrongRows.innerHTML = wrongs.map(q =>
+      `<div class="breakdown-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+        <span class="breakdown-label" style="font-weight:600">第${q.num}問【${q.type}】</span>
+        <span style="font-size:12px;color:var(--text-light);line-height:1.5">${q.question.slice(0, 60)}${q.question.length > 60 ? '…' : ''}</span>
+      </div>`
+    ).join('');
+  }
+
+  showScreen('result-screen');
+}
+
+// ============================================================
+// イベント設定
+// ============================================================
+function setupEvents() {
+  $('login-btn').addEventListener('click', () => doLogin($('pw-input').value));
+  $('pw-input').addEventListener('keypress', e => { if (e.key === 'Enter') $('login-btn').click(); });
+  $('logout-btn').addEventListener('click', doLogout);
+  $('all-quiz-btn').addEventListener('click', startAllMixed);
+
+  $('modal-overlay').addEventListener('click', closeModal);
+  $('modal-close-btn').addEventListener('click', closeModal);
+
+  $('quiz-back-btn').addEventListener('click', () => {
+    if (confirm('途中でやめますか？（進捗は保存されません）')) {
+      showHomeScreen();
+    }
+  });
+
+  $('next-btn').addEventListener('click', nextQuestion);
+  $('retry-btn').addEventListener('click', () => {
+    beginQuiz(currentSubjectId, quizQuestions, quizTitle);
+  });
+  $('home-btn').addEventListener('click', showHomeScreen);
+}
+
+// ============================================================
+// 起動
+// ============================================================
+async function init() {
+  setupEvents();
+  try {
+    const res = await fetch('data/questions.json');
+    DB = await res.json();
+  } catch (e) {
+    $('loading').innerHTML = `
+      <div style="color:#fff;text-align:center;padding:24px">
+        <div style="font-size:24px;margin-bottom:12px">⚠️</div>
+        <div>データの読み込みに失敗しました。<br>data/questions.json を確認してください。</div>
+      </div>`;
+    return;
+  }
+  $('loading').style.display = 'none';
+  if (isLoggedIn()) showHomeScreen();
+  else showScreen('login-screen');
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
