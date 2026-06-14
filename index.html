@@ -339,6 +339,7 @@ function doLogout() { sessionStorage.removeItem('cp_auth'); showScreen('login-sc
 // ホーム画面
 // ============================================================
 function getGroup(subject) {
+  if (subject.id.startsWith('D')) return '🎯 難易度別テスト';
   const id = parseInt(subject.id);
   if (id <= 12) return '第1編';
   if (id <= 16) return '第2編';
