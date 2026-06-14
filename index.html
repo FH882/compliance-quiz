@@ -495,9 +495,9 @@ function startQuizByNums(subjectId, nums, label) {
 }
 
 function startAllMixed() {
-  // 全テキストからランダムに各10問抽出
+  // 難易度別テストを除く全テキストからランダムに各10問抽出
   const all = [];
-  DB.subjects.forEach(s => {
+  DB.subjects.filter(s => !s.id.startsWith('D')).forEach(s => {
     const sample = [...s.questions].sort(() => Math.random() - .5).slice(0, 10);
     all.push(...sample);
   });
