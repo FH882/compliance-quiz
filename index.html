@@ -273,6 +273,7 @@ let quizIndex = 0;
 let quizResults = [];        // true/false の配列
 let quizTitle = '';
 let answered = false;
+let currentCorrectIdx = -1; // シャッフル後の正解位置（0-based）
 
 // ============================================================
 // ユーティリティ
@@ -316,6 +317,54 @@ function resetProgress() {
     localStorage.removeItem('cp_prog');
     renderHome();
   }
+}
+
+// ============================================================
+// 途中保存セッション
+// ============================================================
+function saveSession() {
+  const session = {
+    subjectId: currentSubjectId,
+    title: quizTitle,
+    nums: quizQuestions.map(q => q.num),
+    index: quizIndex,
+    results: quizResults,
+    ts: Date.now()
+  };
+  localStorage.setItem('cp_session', JSON.stringify(session));
+}
+function clearSession() { localStorage.removeItem('cp_session'); }
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem('cp_session')); }
+  catch { return null; }
+}
+function resumeSession(session) {
+  const s = DB.subjects.find(x => x.id === session.subjectId);
+  if (!s) return;
+  const qMap = new Map(s.questions.map(q => [q.num, q]));
+  currentSubjectId = session.subjectId;
+  quizTitle        = session.title;
+  quizQuestions    = session.nums.map(n => qMap.get(n)).filter(Boolean);
+  quizIndex        = session.index;
+  quizResults      = session.results;
+  $('quiz-subject-name').textContent = quizTitle;
+  showScreen('quiz-screen');
+  showQuestion();
+}
+
+// ============================================================
+// 選択肢シャッフル
+// ============================================================
+function shuffleChoices(q) {
+  const order = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    choices: order.map(i => q.choices[i]),
+    correctPos: order.indexOf(q.answer - 1)   // シャッフル後の正解位置
+  };
 }
 
 // ============================================================
@@ -457,6 +506,19 @@ function openSubjectModal(subjectId) {
     });
   }
 
+  // 続きから再開
+  const session = loadSession();
+  if (session && session.subjectId === subjectId && session.index < session.nums.length && session.index > 0) {
+    const remaining = session.nums.length - session.index;
+    const resumeBtn = document.createElement('button');
+    resumeBtn.className = 'modal-option';
+    resumeBtn.style.background = '#fff8e1';
+    resumeBtn.style.borderLeft = '4px solid #f39c12';
+    resumeBtn.innerHTML = `<span class="modal-option-label">🔖 続きから再開</span><span class="modal-option-meta">第${session.index + 1}問〜（残り${remaining}問）</span>`;
+    resumeBtn.addEventListener('click', () => { closeModal(); resumeSession(session); });
+    opts.insertBefore(resumeBtn, opts.firstChild);
+  }
+
   // 間違えた問題のみ
   const prog = getSubjectProg(subjectId);
   const wrongNums = Object.entries(prog.correct || {})
@@ -526,10 +588,14 @@ function showQuestion() {
   $('q-type-badge').textContent = q.type;
   $('q-text').textContent = `第${q.num}問　${q.question}`;
 
+  // 選択肢をシャッフルして表示
+  const { choices, correctPos } = shuffleChoices(q);
+  currentCorrectIdx = correctPos;
+
   const NUMS = ['①', '②', '③', '④'];
   const list = $('choices-list');
   list.innerHTML = '';
-  q.choices.forEach((ch, i) => {
+  choices.forEach((ch, i) => {
     const li = document.createElement('li');
     li.className = 'choice-item';
     const btn = document.createElement('button');
@@ -551,14 +617,19 @@ function selectAnswer(choiceIndex) {
   answered = true;
 
   const q = quizQuestions[quizIndex];
-  const correctIdx = q.answer - 1;
-  const isCorrect = choiceIndex === correctIdx;
+  const isCorrect = choiceIndex === currentCorrectIdx;
   quizResults.push(isCorrect);
+
+  // 途中保存（次の問題インデックスで保存）
+  const savedIndex = quizIndex;
+  quizIndex++;
+  saveSession();
+  quizIndex = savedIndex;
 
   const NUMS = ['①', '②', '③', '④'];
   document.querySelectorAll('.choice-btn').forEach((btn, i) => {
     btn.classList.add('disabled');
-    if (i === correctIdx) btn.classList.add('correct');
+    if (i === currentCorrectIdx) btn.classList.add('correct');
     if (i === choiceIndex && !isCorrect) btn.classList.add('wrong');
   });
 
@@ -571,7 +642,7 @@ function selectAnswer(choiceIndex) {
   } else {
     fb.className = 'answer-feedback feedback-wrong show';
     $('feedback-icon').textContent = '❌';
-    $('feedback-title').textContent = `不正解　正解は${NUMS[correctIdx]}`;
+    $('feedback-title').textContent = `不正解　正解は${NUMS[currentCorrectIdx]}`;
   }
   $('feedback-explanation').textContent = q.explanation || '解説がありません。';
 
@@ -593,6 +664,7 @@ function nextQuestion() {
 // 結果
 // ============================================================
 function finishQuiz() {
+  clearSession();
   if (currentSubjectId !== 'mixed') {
     recordResults(currentSubjectId, quizQuestions, quizResults);
   }
@@ -666,7 +738,7 @@ function setupEvents() {
   $('modal-close-btn').addEventListener('click', closeModal);
 
   $('quiz-back-btn').addEventListener('click', () => {
-    if (confirm('途中でやめますか？（進捗は保存されません）')) {
+    if (confirm('中断しますか？\n（ここまでの進捗は保存され、あとで続きから再開できます）')) {
       showHomeScreen();
     }
   });
